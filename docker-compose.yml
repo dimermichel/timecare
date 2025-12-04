@@ -1,0 +1,117 @@
+version: '3.9'
+
+services:
+  # ===================================
+  # POSTGRESQL (Timecare-core Database)
+  # ===================================
+  postgres:
+    image: postgres:16
+    container_name: postgres_timecare_core
+    restart: always
+    environment:
+      POSTGRES_DB: timecare_core_db
+      POSTGRES_USER: timecare_core_user
+      POSTGRES_PASSWORD: timecare_core_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - microservices_network
+
+  # ===================================
+  # MONGODB (Timecare-notification Database)
+  # ===================================
+  mongo:
+    image: mongo:7
+    container_name: mongo_timecare_notification
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: timecare_notification_user
+      MONGO_INITDB_ROOT_PASSWORD: timecare_notification_pass
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - microservices_network
+
+  # ===================================
+  # RABBITMQ (Shared Message Broker)
+  # ===================================
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq_shared
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    ports:
+      - "5672:5672"     # Message listener
+      - "15672:15672"   # Management UI
+    networks:
+      - microservices_network
+
+  # ===================================
+  # Timecare-core (Java Microservice using PostgreSQL)
+  # ===================================
+  timecare-core:
+    build:
+      context: ./timecare-core
+      dockerfile: Dockerfile
+    container_name: timecare_core
+    restart: always
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/timecare_core_db
+      SPRING_DATASOURCE_USERNAME: timecare_core_user
+      SPRING_DATASOURCE_PASSWORD: timecare_core_pass
+
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: admin
+      SPRING_RABBITMQ_PASSWORD: admin
+    ports:
+      - "8081:8081"
+    networks:
+      - microservices_network
+
+  # ===================================
+  # Timecare-notification (Java Microservice using MongoDB)
+  # ===================================
+  timecare-notification:
+    build:
+      context: ./timecare-notification
+      dockerfile: Dockerfile
+    container_name: timecare_notification
+    restart: always
+    depends_on:
+      - mongo
+      - rabbitmq
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://timecare_notification_user:timecare_notification_pass@mongo:27017/
+
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: admin
+      SPRING_RABBITMQ_PASSWORD: admin
+    ports:
+      - "8082:8082"
+    networks:
+      - microservices_network
+
+# ===================================
+# Persistent Volumes
+# ===================================
+volumes:
+  postgres_data:
+  mongo_data:
+
+# ===================================
+# Network
+# ===================================
+networks:
+  microservices_network:
+    driver: bridge

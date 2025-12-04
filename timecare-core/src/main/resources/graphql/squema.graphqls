@@ -1,0 +1,58 @@
+type Doctor {
+    id: ID!
+    name: String!
+    specialty: String!
+}
+
+input DoctorInput {
+    name: String!
+    specialty: String!
+}
+
+type Patient {
+    id: ID!
+    name: String!
+    email: String!
+}
+
+input PatientInput {
+    name: String!
+    email: String!
+}
+
+type Appointment {
+    id: ID!
+    dateTime: String!
+    doctor: Doctor!
+    patient: Patient!
+}
+
+input AppointmentInput {
+    dateTime: String!
+    doctorId: ID!
+    patientId: ID!
+}
+
+# ======================
+# QUERIES
+# ======================
+type Query {
+    appointments: [Appointment!]!
+    appointmentsByPatient(patientId: ID!): [Appointment!]!
+    appointmentById(id: ID!): Appointment
+
+    doctors: [Doctor!]!
+    doctorById(id: ID!): Doctor
+
+    patients: [Patient!]!
+    patientById(id: ID!): Patient
+}
+
+# ======================
+# MUTATIONS
+# ======================
+type Mutation {
+    createDoctor(input: DoctorInput!): Doctor!
+    createPatient(input: PatientInput!): Patient!
+    createAppointment(input: AppointmentInput!): Appointment!
+}
