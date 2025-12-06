@@ -1,10 +1,8 @@
 package com.michelmaia.timecare_core.controller;
 
-import com.michelmaia.timecare_core.dto.PatientInputDTO;
-import com.michelmaia.timecare_core.entity.Patient;
+import com.michelmaia.timecare_core.model.Patient;
 import com.michelmaia.timecare_core.service.PatientService;
 import org.springframework.graphql.data.method.annotation.Argument;
-import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
@@ -29,8 +27,4 @@ public class PatientGraphQLController {
         return patientService.getPatientById(id);
     }
 
-    @MutationMapping
-    public Patient createPatient(@Argument(name = "input") PatientInputDTO patientInput) {
-        return patientService.create(patientInput);
-    }
 }

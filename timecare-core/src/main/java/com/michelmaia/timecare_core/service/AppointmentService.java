@@ -1,12 +1,12 @@
 package com.michelmaia.timecare_core.service;
 
 import com.michelmaia.timecare_core.dto.AppointmentInputDTO;
-import com.michelmaia.timecare_core.entity.Appointment;
-import com.michelmaia.timecare_core.entity.Doctor;
-import com.michelmaia.timecare_core.entity.Patient;
+import com.michelmaia.timecare_core.model.Appointment;
+import com.michelmaia.timecare_core.model.Medic;
+import com.michelmaia.timecare_core.model.Patient;
 import com.michelmaia.timecare_core.messaging.NotificationProducer;
 import com.michelmaia.timecare_core.repository.AppointmentRepository;
-import com.michelmaia.timecare_core.repository.DoctorRepository;
+import com.michelmaia.timecare_core.repository.MedicRepository;
 import com.michelmaia.timecare_core.repository.PatientRepository;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
@@ -19,14 +19,14 @@ import java.util.Optional;
 public class AppointmentService {
 
     private final AppointmentRepository appointmentRepo;
-    private final DoctorRepository doctorRepo;
+    private final MedicRepository medicRepo;
     private final PatientRepository patientRepo;
     private final NotificationProducer producer;
     private final Logger logger = LoggerFactory.getLogger(AppointmentService.class);
 
-    public AppointmentService(AppointmentRepository appointmentRepo, DoctorRepository doctorRepo, PatientRepository patientRepo, NotificationProducer producer) {
+    public AppointmentService(AppointmentRepository appointmentRepo, MedicRepository medicRepo, PatientRepository patientRepo, NotificationProducer producer) {
         this.appointmentRepo = appointmentRepo;
-        this.doctorRepo = doctorRepo;
+        this.medicRepo = medicRepo;
         this.patientRepo = patientRepo;
         this.producer = producer;
     }
@@ -61,12 +61,12 @@ public class AppointmentService {
             throw new IllegalArgumentException("Patient ID is required");
         }
 
-        Doctor doctor = doctorRepo.findById(appointmentInput.doctorId()).orElseThrow(() -> new IllegalArgumentException("Doctor not found"));
+        Medic medic = medicRepo.findById(appointmentInput.doctorId()).orElseThrow(() -> new IllegalArgumentException("Doctor not found"));
         Patient patient = patientRepo.findById(appointmentInput.patientId()).orElseThrow(() -> new IllegalArgumentException("Patient not found"));
 
         Appointment appointment = new Appointment();
         appointment.setDateTime(appointmentInput.parsedDateTime());
-        appointment.setDoctor(doctor);
+        appointment.setMedic(medic);
         appointment.setPatient(patient);
 
         Appointment saved = appointmentRepo.save(appointment);
@@ -74,13 +74,13 @@ public class AppointmentService {
         // Send notification asynchronously
         try {
             producer.sendNotification(
-                    patient.getEmail(),
+                    patient.getUser().getEmail(),
                     "Medical Appointment Scheduled",
-                    "Hello " + patient.getName() + ", your appointment with Dr. " + doctor.getName() 
+                    "Hello " + patient.getUser().getName() + ", your appointment with Dr. " + medic.getUser().getName()
                             + " is scheduled for " + appointmentInput.dateTime()
             );
         } catch (Exception e) {
-            logger.warn("Notification delivery failed for appointment ID {}, but appointment was created successfully. Error: {}", 
+            logger.warn("Notification delivery failed for appointment ID {}, but appointment was created successfully. Error: {}",
                     saved.getId(), e.getMessage());
         }
 

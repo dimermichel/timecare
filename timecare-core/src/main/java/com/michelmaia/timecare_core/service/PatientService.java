@@ -1,8 +1,8 @@
 package com.michelmaia.timecare_core.service;
 
-import com.michelmaia.timecare_core.dto.PatientInputDTO;
-import com.michelmaia.timecare_core.entity.Patient;
+import com.michelmaia.timecare_core.model.Patient;
 import com.michelmaia.timecare_core.repository.PatientRepository;
+import com.michelmaia.timecare_core.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,9 +11,11 @@ import java.util.Optional;
 @Service
 public class PatientService {
     private final PatientRepository patientRepo;
+    private final UserRepository userRepo;
 
-    public PatientService(PatientRepository patientRepo) {
+    public PatientService(PatientRepository patientRepo, UserRepository userRepo) {
         this.patientRepo = patientRepo;
+        this.userRepo = userRepo;
     }
 
     public List<Patient> getAllPatients() {
@@ -24,22 +26,7 @@ public class PatientService {
         return patientRepo.findById(id);
     }
 
-    public Patient create(PatientInputDTO patientInput) {
-        if (patientInput == null) {
-            throw new IllegalArgumentException("Patient input cannot be null");
-        }
-        
-        if (patientInput.name() == null || patientInput.name().isBlank()) {
-            throw new IllegalArgumentException("Patient name is required and cannot be blank");
-        }
-        
-        if (patientInput.email() == null || patientInput.email().isBlank()) {
-            throw new IllegalArgumentException("Patient email is required and cannot be blank");
-        }
-        
-        Patient patient = new Patient();
-        patient.setName(patientInput.name().trim());
-        patient.setEmail(patientInput.email().trim());
-        return patientRepo.save(patient);
-    }
+   public Patient create(Patient patient) {
+       return patientRepo.save(patient);
+   }
 }

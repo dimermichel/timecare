@@ -1,35 +1,39 @@
-type Doctor {
+type User {
     id: ID!
     name: String!
-    specialty: String!
+    email: String!
+    role: String!
 }
 
-input DoctorInput {
-    name: String!
+type Medic {
+    id: ID!
     specialty: String!
+    User: User!
 }
 
 type Patient {
     id: ID!
-    name: String!
-    email: String!
+    dateOfBirth: String!
+    insuranceProvider: String
+    User: User!
 }
 
-input PatientInput {
-    name: String!
-    email: String!
+type Nurse {
+    id: ID!
+    department: String!
+    User: User!
 }
 
 type Appointment {
     id: ID!
     dateTime: String!
-    doctor: Doctor!
+    medic: Medic!
     patient: Patient!
 }
 
 input AppointmentInput {
     dateTime: String!
-    doctorId: ID!
+    medicId: ID!
     patientId: ID!
 }
 
@@ -41,18 +45,19 @@ type Query {
     appointmentsByPatient(patientId: ID!): [Appointment!]!
     appointmentById(id: ID!): Appointment
 
-    doctors: [Doctor!]!
-    doctorById(id: ID!): Doctor
+    medics: [Medic!]!
+    medicById(id: ID!): Medic
 
     patients: [Patient!]!
     patientById(id: ID!): Patient
+
+    nurses: [Nurse!]!
+    nurseById(id: ID!): Nurse
 }
 
 # ======================
 # MUTATIONS
 # ======================
 type Mutation {
-    createDoctor(input: DoctorInput!): Doctor!
-    createPatient(input: PatientInput!): Patient!
     createAppointment(input: AppointmentInput!): Appointment!
 }

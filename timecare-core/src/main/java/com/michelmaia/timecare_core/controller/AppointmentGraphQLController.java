@@ -1,7 +1,7 @@
 package com.michelmaia.timecare_core.controller;
 
 import com.michelmaia.timecare_core.dto.AppointmentInputDTO;
-import com.michelmaia.timecare_core.entity.Appointment;
+import com.michelmaia.timecare_core.model.Appointment;
 import com.michelmaia.timecare_core.service.AppointmentService;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
