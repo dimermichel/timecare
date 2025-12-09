@@ -4,6 +4,7 @@ import com.michelmaia.timecare_core.dto.AppointmentInputDTO;
 import com.michelmaia.timecare_core.exception.AccessDeniedGraphQLException;
 import com.michelmaia.timecare_core.messaging.NotificationProducer;
 import com.michelmaia.timecare_core.model.Appointment;
+import com.michelmaia.timecare_core.model.AppointmentStatus;
 import com.michelmaia.timecare_core.model.Medic;
 import com.michelmaia.timecare_core.model.Patient;
 import com.michelmaia.timecare_core.repository.AppointmentRepository;
@@ -65,6 +66,11 @@ public class AppointmentService {
         Medic medic = findMedicOrThrow(input.doctorId());
         Patient patient = findPatientOrThrow(input.patientId());
 
+        if(isPatient()) {
+            // Avoid Patient scheduling Medical Appointments to different Patients
+            checkPatientAccess(patient.getId());
+        }
+
         Appointment appointment = new Appointment();
         appointment.setDateTime(input.parsedDateTime());
         appointment.setMedic(medic);
@@ -82,11 +88,32 @@ public class AppointmentService {
         Medic medic = findMedicOrThrow(input.doctorId());
         Patient patient = findPatientOrThrow(input.patientId());
 
+        if(isPatient()) {
+            // Avoid Patient scheduling Medical Appointments to different Patients
+            checkPatientAccess(patient.getId());
+        }
+
         appointment.setDateTime(input.parsedDateTime());
         appointment.setMedic(medic);
         appointment.setPatient(patient);
 
         return saveAndNotify(appointment, "Updated Medical Appointment Scheduled", input.dateTime());
+    }
+
+    public Appointment updateStatus(Long id, AppointmentStatus status) {
+        Appointment appointment = appointmentRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Appointment not found with id: " + id));
+
+        appointment.setStatus(status);
+
+        if(isMedicalStaff()) {
+            return appointmentRepo.save(appointment);
+        }
+
+        // Patients can only update their own appointment status
+        checkPatientAccess(appointment.getPatient().getId());
+        return appointmentRepo.save(appointment);
+
     }
 
     private boolean isMedicalStaff() {

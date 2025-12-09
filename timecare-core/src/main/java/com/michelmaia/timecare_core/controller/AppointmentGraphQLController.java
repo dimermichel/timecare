@@ -2,6 +2,7 @@ package com.michelmaia.timecare_core.controller;
 
 import com.michelmaia.timecare_core.dto.AppointmentInputDTO;
 import com.michelmaia.timecare_core.model.Appointment;
+import com.michelmaia.timecare_core.model.AppointmentStatus;
 import com.michelmaia.timecare_core.service.AppointmentService;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -49,6 +50,12 @@ public class AppointmentGraphQLController {
     @MutationMapping
     public Appointment updateAppointment(@Argument Long id, @Argument(name = "input") AppointmentInputDTO appointmentInput) {
         return appointmentService.update(id, appointmentInput);
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @MutationMapping
+    public Appointment updateAppointmentStatus(@Argument Long id, @Argument AppointmentStatus status) {
+        return appointmentService.updateStatus(id, status);
     }
 
 }
