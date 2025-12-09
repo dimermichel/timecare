@@ -39,7 +39,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/graphiql", "/voyager/**", "/playground/**").permitAll()
+                        .requestMatchers("/register").permitAll() // In production this endpoint should be restricted
                         .requestMatchers("/graphql").authenticated()
                         .anyRequest().authenticated()
                 )

@@ -6,6 +6,7 @@ import com.michelmaia.timecare_core.service.AppointmentService;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
@@ -20,14 +21,16 @@ public class AppointmentGraphQLController {
     }
 
     // Queries
+    @PreAuthorize("isAuthenticated()")
     @QueryMapping
     public List<Appointment> appointments() {
         return appointmentService.getAllAppointments();
     }
 
+    @PreAuthorize("isAuthenticated()")
     @QueryMapping
     public Appointment appointmentById(@Argument Long id) {
-        return appointmentService.getAppointmentById(id).orElseThrow();
+        return appointmentService.getAppointmentById(id);
     }
 
     @QueryMapping
@@ -36,9 +39,16 @@ public class AppointmentGraphQLController {
     }
 
     // Mutations
+    @PreAuthorize("isAuthenticated()")
     @MutationMapping
     public Appointment createAppointment(@Argument(name = "input") AppointmentInputDTO appointmentInput) {
         return appointmentService.create(appointmentInput);
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @MutationMapping
+    public Appointment updateAppointment(@Argument Long id, @Argument(name = "input") AppointmentInputDTO appointmentInput) {
+        return appointmentService.update(id, appointmentInput);
     }
 
 }

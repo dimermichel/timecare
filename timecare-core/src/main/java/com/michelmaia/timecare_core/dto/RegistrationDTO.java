@@ -20,6 +20,8 @@ public class RegistrationDTO {
     @NotNull
     private Role role;
 
+    private String name;
+
     // Patient specific fields
     private LocalDate dateOfBirth;
     private String insuranceProvider;

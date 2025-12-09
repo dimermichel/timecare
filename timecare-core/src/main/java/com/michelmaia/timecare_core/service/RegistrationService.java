@@ -29,6 +29,7 @@ public class RegistrationService {
         // 1. Create the core User object
         User user = new User();
         user.setEmail(request.getEmail());
+        user.setName(request.getName());
         user.setPassword(request.getPassword()); // Will be hashed in UserService
         user.setRole(request.getRole());
 

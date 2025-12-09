@@ -1,90 +1,149 @@
 package com.michelmaia.timecare_core.service;
 
 import com.michelmaia.timecare_core.dto.AppointmentInputDTO;
+import com.michelmaia.timecare_core.exception.AccessDeniedGraphQLException;
+import com.michelmaia.timecare_core.messaging.NotificationProducer;
 import com.michelmaia.timecare_core.model.Appointment;
 import com.michelmaia.timecare_core.model.Medic;
 import com.michelmaia.timecare_core.model.Patient;
-import com.michelmaia.timecare_core.messaging.NotificationProducer;
 import com.michelmaia.timecare_core.repository.AppointmentRepository;
 import com.michelmaia.timecare_core.repository.MedicRepository;
 import com.michelmaia.timecare_core.repository.PatientRepository;
-import org.springframework.stereotype.Service;
+import com.michelmaia.timecare_core.repository.UserRepository;
+import com.michelmaia.timecare_core.security.CurrentUser;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class AppointmentService {
-
     private final AppointmentRepository appointmentRepo;
+    private final CurrentUser currentUser;
+    private final UserRepository userRepo;
     private final MedicRepository medicRepo;
     private final PatientRepository patientRepo;
     private final NotificationProducer producer;
     private final Logger logger = LoggerFactory.getLogger(AppointmentService.class);
 
-    public AppointmentService(AppointmentRepository appointmentRepo, MedicRepository medicRepo, PatientRepository patientRepo, NotificationProducer producer) {
-        this.appointmentRepo = appointmentRepo;
-        this.medicRepo = medicRepo;
-        this.patientRepo = patientRepo;
-        this.producer = producer;
-    }
-
     public List<Appointment> getAllAppointments() {
-        return appointmentRepo.findAll();
+        if (isMedicalStaff()) {
+            return appointmentRepo.findAll();
+        }
+        if (isPatient()) {
+            return appointmentRepo.findByPatientId(getCurrentUserPatientId());
+        }
+        throw new AccessDeniedGraphQLException("Unauthorized role");
     }
 
     public List<Appointment> getAllAppointmentsByPatient(Long id) {
+        if (isMedicalStaff()) {
+            return appointmentRepo.findByPatientId(id);
+        }
+        checkPatientAccess(id);
         return appointmentRepo.findByPatientId(id);
     }
 
-    public Optional<Appointment> getAppointmentById(Long id) {
-        return appointmentRepo.findById(id);
+    public Appointment getAppointmentById(Long id) {
+        Appointment ap = appointmentRepo.findById(id)
+                .orElseThrow(() -> new AccessDeniedGraphQLException("Appointment not found"));
+
+        if (isMedicalStaff()) {
+            return ap;
+        }
+
+        checkPatientAccess(ap.getPatient().getId());
+        return ap;
     }
 
-    public Appointment create(AppointmentInputDTO appointmentInput) {
+    public Appointment create(AppointmentInputDTO input) {
+        validateInput(input);
 
-        if (appointmentInput == null) {
-            throw new IllegalArgumentException("Appointment input cannot be null");
-        }
-
-        if (appointmentInput.dateTime() == null || appointmentInput.dateTime().isBlank()) {
-            throw new IllegalArgumentException("DateTime is required");
-        }
-
-        if (appointmentInput.doctorId() == null) {
-            throw new IllegalArgumentException("Doctor ID is required");
-        }
-
-        if (appointmentInput.patientId() == null) {
-            throw new IllegalArgumentException("Patient ID is required");
-        }
-
-        Medic medic = medicRepo.findById(appointmentInput.doctorId()).orElseThrow(() -> new IllegalArgumentException("Doctor not found"));
-        Patient patient = patientRepo.findById(appointmentInput.patientId()).orElseThrow(() -> new IllegalArgumentException("Patient not found"));
+        Medic medic = findMedicOrThrow(input.doctorId());
+        Patient patient = findPatientOrThrow(input.patientId());
 
         Appointment appointment = new Appointment();
-        appointment.setDateTime(appointmentInput.parsedDateTime());
+        appointment.setDateTime(input.parsedDateTime());
         appointment.setMedic(medic);
         appointment.setPatient(patient);
 
-        Appointment saved = appointmentRepo.save(appointment);
-
-        // Send notification asynchronously
-        try {
-            producer.sendNotification(
-                    patient.getUser().getEmail(),
-                    "Medical Appointment Scheduled",
-                    "Hello " + patient.getUser().getName() + ", your appointment with Dr. " + medic.getUser().getName()
-                            + " is scheduled for " + appointmentInput.dateTime()
-            );
-        } catch (Exception e) {
-            logger.warn("Notification delivery failed for appointment ID {}, but appointment was created successfully. Error: {}",
-                    saved.getId(), e.getMessage());
-        }
-
-        return saved;
+        return saveAndNotify(appointment, "Medical Appointment Scheduled", input.dateTime());
     }
 
+    public Appointment update(Long id, AppointmentInputDTO input) {
+        validateInput(input);
+
+        Appointment appointment = appointmentRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Appointment not found with id: " + id));
+
+        Medic medic = findMedicOrThrow(input.doctorId());
+        Patient patient = findPatientOrThrow(input.patientId());
+
+        appointment.setDateTime(input.parsedDateTime());
+        appointment.setMedic(medic);
+        appointment.setPatient(patient);
+
+        return saveAndNotify(appointment, "Updated Medical Appointment Scheduled", input.dateTime());
+    }
+
+    private boolean isMedicalStaff() {
+        return currentUser.hasRole("MEDIC") || currentUser.hasRole("NURSE");
+    }
+
+    private boolean isPatient() {
+        return currentUser.hasRole("PATIENT");
+    }
+
+    private Long getCurrentUserPatientId() {
+        return userRepo.findByEmail(currentUser.getUsername())
+                .map(user -> user.getId())
+                .orElseThrow(() -> new AccessDeniedGraphQLException("Current user not found"));
+    }
+
+    private void checkPatientAccess(Long targetPatientId) {
+        if (isPatient()) {
+            if (!getCurrentUserPatientId().equals(targetPatientId)) {
+                throw new AccessDeniedGraphQLException("Patients may only access their own appointments");
+            }
+            return;
+        }
+        throw new AccessDeniedGraphQLException("Unauthorized role");
+    }
+
+    private Medic findMedicOrThrow(Long id) {
+        return medicRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Doctor not found"));
+    }
+
+    private Patient findPatientOrThrow(Long id) {
+        return patientRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Patient not found"));
+    }
+
+    private void validateInput(AppointmentInputDTO input) {
+        if (input == null) throw new IllegalArgumentException("Appointment input cannot be null");
+        if (input.dateTime() == null || input.dateTime().isBlank())
+            throw new IllegalArgumentException("DateTime is required");
+        if (input.doctorId() == null) throw new IllegalArgumentException("Doctor ID is required");
+        if (input.patientId() == null) throw new IllegalArgumentException("Patient ID is required");
+    }
+
+    private Appointment saveAndNotify(Appointment appointment, String subject, String dateString) {
+        Appointment saved = appointmentRepo.save(appointment);
+        try {
+            String patientName = saved.getPatient().getUser().getName();
+            String medicName = saved.getMedic().getUser().getName();
+            String message = "Hello " + patientName + ", your appointment with Dr. " + medicName
+                    + " is scheduled for " + dateString;
+
+            producer.sendNotification(saved.getPatient().getUser().getEmail(), subject, message);
+        } catch (Exception e) {
+            logger.warn("Notification delivery failed for appointment ID {}, but appointment was saved successfully. Error: {}",
+                    saved.getId(), e.getMessage());
+        }
+        return saved;
+    }
 }
