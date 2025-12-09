@@ -1,0 +1,105 @@
+{
+  "users": [
+    {
+      "name": "admin",
+      "password": "admin",
+      "tags": "administrator"
+    },
+    {
+      "name": "core_service",
+      "password": "core_service_password",
+      "tags": "management"
+    },
+    {
+      "name": "notification_service",
+      "password": "notification_service_password",
+      "tags": "management"
+    }
+  ],
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "admin",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    },
+    {
+      "user": "core_service",
+      "vhost": "/",
+      "configure": "",
+      "write": "^appointments\\.notifications$",
+      "read": ""
+    },
+    {
+      "user": "notification_service",
+      "vhost": "/",
+      "configure": "",
+      "write": "",
+      "read": "^email\\.notification\\.(queue|dlq)$"
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "appointments.notifications",
+      "type": "topic",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "appointments.notifications.dlx",
+      "type": "fanout",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "email.notification.queue",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "appointments.notifications.dlx",
+        "x-message-ttl": 30000,
+        "x-max-length": 10000
+      }
+    },
+    {
+      "name": "email.notification.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "appointments.notifications",
+      "destination": "email.notification.queue",
+      "destination_type": "queue",
+      "routing_key": "email.notification.*",
+      "vhost": "/",
+      "arguments": {}
+    },
+    {
+      "source": "appointments.notifications.dlx",
+      "destination": "email.notification.dlq",
+      "destination_type": "queue",
+      "routing_key": "",
+      "vhost": "/",
+      "arguments": {}
+    }
+  ]
+}
