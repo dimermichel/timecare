@@ -21,7 +21,7 @@ public class NotificationProducer {
             NotificationMessage message = new NotificationMessage(email, subject, body);
             rabbitTemplate.convertAndSend(
                     RabbitMQConfig.NOTIFICATION_EXCHANGE,
-                    "notification.email",
+                    "email.notifications.email",
                     message
             );
             logger.info("Notification sent to: {}", email);

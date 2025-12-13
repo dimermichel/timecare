@@ -16,7 +16,7 @@ public class DLQNotificationListener {
         this.failedService = failedService;
     }
 
-    @RabbitListener(queues = "email.notification.dlq")
+    @RabbitListener(queues = "email.notifications.dlq")
     public void receiveDeadLetter(Map<String, Object> message) {
         log.error("📨 Message arrived in DLQ: {}", message);
 

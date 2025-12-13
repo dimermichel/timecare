@@ -33,7 +33,7 @@
       "user": "core_service",
       "vhost": "/",
       "configure": "",
-      "write": "^appointments\\.notifications$",
+      "write": "^email\\.notifications\\.exchange$",
       "read": ""
     },
     {
@@ -41,12 +41,12 @@
       "vhost": "/",
       "configure": "",
       "write": "",
-      "read": "^email\\.notification\\.(queue|dlq)$"
+      "read": "^email\\.notifications\\.(queue|dlq)$"
     }
   ],
   "exchanges": [
     {
-      "name": "appointments.notifications",
+      "name": "email.notifications.exchange",
       "type": "topic",
       "vhost": "/",
       "durable": true,
@@ -55,7 +55,7 @@
       "arguments": {}
     },
     {
-      "name": "appointments.notifications.dlx",
+      "name": "email.notifications.dlx",
       "type": "fanout",
       "vhost": "/",
       "durable": true,
@@ -66,18 +66,18 @@
   ],
   "queues": [
     {
-      "name": "email.notification.queue",
+      "name": "email.notifications.queue",
       "vhost": "/",
       "durable": true,
       "auto_delete": false,
       "arguments": {
-        "x-dead-letter-exchange": "appointments.notifications.dlx",
+        "x-dead-letter-exchange": "email.notifications.dlx",
         "x-message-ttl": 30000,
         "x-max-length": 10000
       }
     },
     {
-      "name": "email.notification.dlq",
+      "name": "email.notifications.dlq",
       "vhost": "/",
       "durable": true,
       "auto_delete": false,
@@ -86,16 +86,16 @@
   ],
   "bindings": [
     {
-      "source": "appointments.notifications",
-      "destination": "email.notification.queue",
+      "source": "email.notifications.exchange",
+      "destination": "email.notifications.queue",
       "destination_type": "queue",
-      "routing_key": "email.notification.*",
+      "routing_key": "email.notifications.*",
       "vhost": "/",
       "arguments": {}
     },
     {
-      "source": "appointments.notifications.dlx",
-      "destination": "email.notification.dlq",
+      "source": "email.notifications.dlx",
+      "destination": "email.notifications.dlq",
       "destination_type": "queue",
       "routing_key": "",
       "vhost": "/",

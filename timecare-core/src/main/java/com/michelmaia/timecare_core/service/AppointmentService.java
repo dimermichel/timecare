@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -63,7 +64,7 @@ public class AppointmentService {
     public Appointment create(AppointmentInputDTO input) {
         validateInput(input);
 
-        Medic medic = findMedicOrThrow(input.doctorId());
+        Medic medic = findMedicOrThrow(input.medicId());
         Patient patient = findPatientOrThrow(input.patientId());
 
         if(isPatient()) {
@@ -76,7 +77,7 @@ public class AppointmentService {
         appointment.setMedic(medic);
         appointment.setPatient(patient);
 
-        return saveAndNotify(appointment, "Medical Appointment Scheduled", input.dateTime());
+        return saveAndNotify(appointment, "Medical Appointment Scheduled",  input.parsedDateTime().format(DateTimeFormatter.ofPattern("MMMM dd, yyyy 'at' hh:mm a")));
     }
 
     public Appointment update(Long id, AppointmentInputDTO input) {
@@ -85,7 +86,7 @@ public class AppointmentService {
         Appointment appointment = appointmentRepo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Appointment not found with id: " + id));
 
-        Medic medic = findMedicOrThrow(input.doctorId());
+        Medic medic = findMedicOrThrow(input.medicId());
         Patient patient = findPatientOrThrow(input.patientId());
 
         if(isPatient()) {
@@ -97,7 +98,7 @@ public class AppointmentService {
         appointment.setMedic(medic);
         appointment.setPatient(patient);
 
-        return saveAndNotify(appointment, "Updated Medical Appointment Scheduled", input.dateTime());
+        return saveAndNotify(appointment, "Updated Medical Appointment Scheduled", input.parsedDateTime().format(DateTimeFormatter.ofPattern("MMMM dd, yyyy 'at' hh:mm a")));
     }
 
     public Appointment updateStatus(Long id, AppointmentStatus status) {
@@ -107,12 +108,12 @@ public class AppointmentService {
         appointment.setStatus(status);
 
         if(isMedicalStaff()) {
-            return appointmentRepo.save(appointment);
+            return saveAndNotify(appointment, "Medical Appointment Status Updated - " + status, appointment.getDateTime().format(DateTimeFormatter.ofPattern("MMMM dd, yyyy 'at' hh:mm a")));
         }
 
         // Patients can only update their own appointment status
         checkPatientAccess(appointment.getPatient().getId());
-        return appointmentRepo.save(appointment);
+        return saveAndNotify(appointment, "Medical Appointment Status Updated - " + status, appointment.getDateTime().format(DateTimeFormatter.ofPattern("MMMM dd, yyyy 'at' hh:mm a")));
 
     }
 
@@ -154,7 +155,7 @@ public class AppointmentService {
         if (input == null) throw new IllegalArgumentException("Appointment input cannot be null");
         if (input.dateTime() == null || input.dateTime().isBlank())
             throw new IllegalArgumentException("DateTime is required");
-        if (input.doctorId() == null) throw new IllegalArgumentException("Doctor ID is required");
+        if (input.medicId() == null) throw new IllegalArgumentException("Medic ID is required");
         if (input.patientId() == null) throw new IllegalArgumentException("Patient ID is required");
     }
 

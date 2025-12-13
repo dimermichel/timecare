@@ -1,16 +1,19 @@
 package com.michelmaia.timecare_core.bootstrap;
 
 import com.michelmaia.timecare_core.dto.RegistrationDTO;
+import com.michelmaia.timecare_core.model.Role;
 import com.michelmaia.timecare_core.model.User;
 import com.michelmaia.timecare_core.service.RegistrationService;
 import com.michelmaia.timecare_core.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.util.List;
 
+@Component
 public class DataInitializer implements CommandLineRunner {
     private final RegistrationService registrationService;
     private final UserService userService;
@@ -30,6 +33,7 @@ public class DataInitializer implements CommandLineRunner {
             medic.setEmail("medic@email.com");
             medic.setPassword("medic");
             medic.setName("Medic");
+            medic.setRole(Role.MEDIC);
             medic.setSpecialty("Cardiologist");
             registrationService.register(medic);
 
@@ -38,6 +42,7 @@ public class DataInitializer implements CommandLineRunner {
             patient.setEmail("patient@email.com");
             patient.setPassword("patient");
             patient.setName("Patient");
+            patient.setRole(Role.PATIENT);
             patient.setDateOfBirth(LocalDate.of(2020, 1, 1));
             patient.setInsuranceProvider("Insurance Provider");
             registrationService.register(patient);
@@ -47,6 +52,7 @@ public class DataInitializer implements CommandLineRunner {
             nurse.setEmail("nurse@email.com");
             nurse.setPassword("nurse");
             nurse.setName("Nurse");
+            nurse.setRole(Role.NURSE);
             nurse.setDepartment("Department");
             registrationService.register(nurse);
 

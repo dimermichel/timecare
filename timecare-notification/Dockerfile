@@ -12,4 +12,4 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8082
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-Dspring.data.mongodb.uri=mongodb://mongo:27017/timecare_notification_db", "-jar", "/app/app.jar"]
