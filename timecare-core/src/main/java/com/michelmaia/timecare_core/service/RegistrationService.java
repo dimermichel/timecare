@@ -23,20 +23,18 @@ public class RegistrationService {
         this.nurseService = nurseService;
     }
 
-    @Transactional // User and Profile creation succeed or fail together
+    @Transactional
     public User register(RegistrationDTO request) {
 
-        // 1. Create the core User object
+
         User user = new User();
         user.setEmail(request.getEmail());
         user.setName(request.getName());
-        user.setPassword(request.getPassword()); // Will be hashed in UserService
+        user.setPassword(request.getPassword());
         user.setRole(request.getRole());
 
-        // 2. Persist the core User first
         User createdUser = userService.createUser(user);
 
-        // 3. Create the corresponding profile based on the role
         switch (request.getRole()) {
             case PATIENT -> createPatientProfile(createdUser, request);
             case MEDIC -> createMedicProfile(createdUser, request);

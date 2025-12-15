@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -31,11 +32,17 @@ public class AppointmentService {
     private final NotificationProducer producer;
     private final Logger logger = LoggerFactory.getLogger(AppointmentService.class);
 
-    public List<Appointment> getAllAppointments() {
+    public List<Appointment> getAllAppointments(Boolean justUpcoming) {
         if (isMedicalStaff()) {
+            if (justUpcoming != null && justUpcoming) {
+                return appointmentRepo.findByDateTimeAfter(LocalDateTime.now());
+            }
             return appointmentRepo.findAll();
         }
         if (isPatient()) {
+            if (justUpcoming != null && justUpcoming){
+                return appointmentRepo.findByPatientIdAndDateTimeAfter(getCurrentUserPatientId(), LocalDateTime.now());
+            }
             return appointmentRepo.findByPatientId(getCurrentUserPatientId());
         }
         throw new AccessDeniedGraphQLException("Unauthorized role");

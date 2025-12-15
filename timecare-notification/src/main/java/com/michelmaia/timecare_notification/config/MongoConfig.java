@@ -13,7 +13,7 @@ import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 @Configuration
 public class MongoConfig extends AbstractMongoClientConfiguration {
 
-    @Value("${spring.data.mongodb.uri:mongodb://mongo:27017/timecare_notification_db}")
+    @Value("${spring.data.mongodb.uri}")
     private String mongoUri;
 
     @Override

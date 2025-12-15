@@ -24,8 +24,9 @@ public class AppointmentGraphQLController {
     // Queries
     @PreAuthorize("isAuthenticated()")
     @QueryMapping
-    public List<Appointment> appointments() {
-        return appointmentService.getAllAppointments();
+    public List<Appointment> appointments(@Argument Boolean justUpcoming) {
+        Boolean filterUpcoming = justUpcoming != null && justUpcoming;
+        return appointmentService.getAllAppointments(filterUpcoming);
     }
 
     @PreAuthorize("isAuthenticated()")

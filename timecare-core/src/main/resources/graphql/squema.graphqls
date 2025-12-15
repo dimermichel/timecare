@@ -49,7 +49,7 @@ input AppointmentInput {
 # QUERIES
 # ======================
 type Query {
-    appointments: [Appointment!]!
+    appointments(justUpcoming: Boolean): [Appointment!]!
     appointmentsByPatient(patientId: ID!): [Appointment!]!
     appointmentById(id: ID!): Appointment
 

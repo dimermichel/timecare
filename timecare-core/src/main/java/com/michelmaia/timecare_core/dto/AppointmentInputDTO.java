@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter;
 public record AppointmentInputDTO(
         String date, String dateTime, Long medicId, Long patientId
 ) {
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
 
     public LocalDateTime parsedDateTime() {
         return LocalDateTime.parse(this.dateTime, FORMATTER);
