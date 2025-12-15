@@ -270,11 +270,17 @@ Content-Type: application/json
 ```
 ### GraphQL Examples
 
+> 💡 **Tip:** You can test all GraphQL queries and mutations interactively in the **GraphiQL Playground** at [http://localhost:8081/graphql](http://localhost:8081/graphql). The playground provides auto-completion, schema documentation, and query validation.
+
 **Important:** All GraphQL requests require authentication header:
 ```
-
 Authorization: Bearer <your-jwt-token>
 ```
+**To authenticate in GraphiQL:**
+1. First, obtain a JWT token using the `/auth/login` endpoint
+2. In GraphiQL, click "Headers" at the bottom
+3. Add: `{"Authorization": "Bearer YOUR_TOKEN_HERE"}`
+
 **Query: Get All Appointments**
 ```
 graphql
