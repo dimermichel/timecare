@@ -18,13 +18,13 @@ public class PatientGraphQLController {
         this.patientService = patientService;
     }
 
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('MEDIC', 'NURSE')")
     @QueryMapping
     public List<Patient> patients() {
         return patientService.getAllPatients();
     }
 
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('MEDIC', 'NURSE')")
     @QueryMapping
     public Optional<Patient> patientById(@Argument Long id) {
         return patientService.getPatientById(id);

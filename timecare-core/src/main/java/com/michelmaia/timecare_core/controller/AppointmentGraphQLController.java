@@ -35,6 +35,7 @@ public class AppointmentGraphQLController {
         return appointmentService.getAppointmentById(id);
     }
 
+    @PreAuthorize("isAuthenticated()")
     @QueryMapping
     public List<Appointment> appointmentsByPatient(@Argument Long patientId) {
         return appointmentService.getAllAppointmentsByPatient(patientId);

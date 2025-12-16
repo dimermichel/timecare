@@ -45,10 +45,11 @@ public class AuthController {
             throw new RuntimeException("Invalid credentials");
         }
 
-        var role = user.getAuthorities().stream()
-            .map(GrantedAuthority::getAuthority)
-            .toList();
-        String token = jwtUtil.generateToken(user.getUsername(), role);
+        var roleNames = user.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .map(auth -> auth.replace("ROLE_", ""))
+                .toList();
+        String token = jwtUtil.generateToken(user.getUsername(), roleNames);
         return new LoginResponse(token);
     }
 }
